@@ -37,10 +37,11 @@ final class IMAPlayerViewModel: NSObject {
   private weak var adContainerView: UIView?
   private weak var presentingViewController: UIViewController?
 
-  private lazy var contentPlayhead = IMAAVPlayerContentPlayhead(avPlayer: player)
+  private var contentPlayhead: IMAAVPlayerContentPlayhead!
 
   override init() {
     super.init()
+    contentPlayhead = IMAAVPlayerContentPlayhead(avPlayer: player)
     adsLoader.delegate = self
     NotificationCenter.default.addObserver(
       self,
