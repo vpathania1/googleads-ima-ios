@@ -50,6 +50,12 @@ struct ContentView: View {
     .ignoresSafeArea()
     .statusBarHidden()
     .preferredColorScheme(.dark)
+    .onAppear {
+      // Auto-play after 3 s so the ad container is fully live in the window hierarchy.
+      DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+        viewModel.play()
+      }
+    }
   }
 }
 
