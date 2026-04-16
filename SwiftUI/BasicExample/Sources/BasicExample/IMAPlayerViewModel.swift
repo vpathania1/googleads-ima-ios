@@ -17,11 +17,18 @@ import GoogleInteractiveMediaAds
 import Observation
 
 /// View model that owns the AVPlayer and drives all IMA SDK interactions.
+///
+/// Content plays full-screen in 9:16. The ad container passed to IMA is sized
+/// 16:9 (set by AdContainerView's SwiftUI frame), so IMA requests and renders
+/// a landscape pre-roll inside the portrait player.
 @Observable
 final class IMAPlayerViewModel: NSObject {
+
+  // Vertical (9:16) sample content video.
   static let contentURL = URL(
     string: "https://storage.googleapis.com/gvabox/media/samples/stock.mp4")!
 
+  // Standard 16:9 linear pre-roll ad tag (640×480 VAST).
   static let adTagURLString =
     "https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/"
     + "single_ad_samples&sz=640x480&cust_params=sample_ct%3Dlinear&ciu_szs=300x250%2C728x90&"
@@ -33,7 +40,6 @@ final class IMAPlayerViewModel: NSObject {
   private let adsLoader = IMAAdsLoader()
   private var adsManager: IMAAdsManager?
 
-  // Weak references set by AdContainerView once its UIView is in the hierarchy.
   private weak var adContainerView: UIView?
   private weak var presentingViewController: UIViewController?
 
@@ -50,7 +56,6 @@ final class IMAPlayerViewModel: NSObject {
       object: player.currentItem)
   }
 
-  /// Called by AdContainerView once its UIView is live in the window.
   func configure(adContainer: UIView, presentingViewController: UIViewController) {
     self.adContainerView = adContainer
     self.presentingViewController = presentingViewController
@@ -63,6 +68,8 @@ final class IMAPlayerViewModel: NSObject {
 
   private func requestAds() {
     guard let adContainerView, let presentingViewController else { return }
+    // adContainerView is already sized 16:9 by SwiftUI — IMA will render
+    // a landscape ad inside it regardless of the portrait screen orientation.
     let adDisplayContainer = IMAAdDisplayContainer(
       adContainer: adContainerView,
       viewController: presentingViewController,
