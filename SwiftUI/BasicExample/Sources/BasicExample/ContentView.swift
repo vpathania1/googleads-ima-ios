@@ -12,23 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import AVKit
+import AVFoundation
 import SwiftUI
 
 struct ContentView: View {
   @State private var viewModel = IMAPlayerViewModel()
 
   var body: some View {
-    VStack {
-      Text("IMA SDK SwiftUI Example")
-        .font(.headline)
-
+    GeometryReader { geo in
       ZStack {
-        // Native SwiftUI video player — no UIViewControllerRepresentable needed.
-        VideoPlayer(player: viewModel.player)
+        Color.black.ignoresSafeArea()
 
-        // Transparent overlay that gives IMA SDK the UIView/UIViewController it needs.
+        // 9:16 full-screen vertical content video (aspect-fill covers the full portrait frame).
+        VerticalVideoPlayer(player: viewModel.player)
+          .ignoresSafeArea()
+
+        // 16:9 ad container centred vertically within the 9:16 screen.
+        // IMA renders the ad inside this view — its 16:9 size tells the SDK
+        // to serve a landscape ad even though the content is portrait.
         AdContainerView(viewModel: viewModel)
+          .frame(width: geo.size.width, height: geo.size.width * 9 / 16)
 
         if viewModel.isPlayButtonVisible {
           Button {
@@ -36,18 +39,45 @@ struct ContentView: View {
           } label: {
             Image(systemName: "play.fill")
               .resizable()
-              .frame(width: 50, height: 50)
+              .frame(width: 64, height: 64)
               .foregroundStyle(.white)
-              .shadow(radius: 4)
+              .shadow(radius: 8)
           }
         }
       }
-      .aspectRatio(16 / 9, contentMode: .fit)
-      .padding()
-
-      Spacer()
+      .frame(width: geo.size.width, height: geo.size.height)
     }
-    .padding(.top)
+    .ignoresSafeArea()
+    .statusBarHidden()
+    .preferredColorScheme(.dark)
+  }
+}
+
+// MARK: - VerticalVideoPlayer
+
+/// Full-screen AVPlayer view using AVPlayerLayer with resizeAspectFill
+/// so vertical content fills the entire 9:16 frame without letterboxing.
+private struct VerticalVideoPlayer: UIViewRepresentable {
+  let player: AVPlayer
+
+  func makeUIView(context: Context) -> PlayerLayerView {
+    let view = PlayerLayerView()
+    view.playerLayer.player = player
+    view.playerLayer.videoGravity = .resizeAspectFill
+    view.backgroundColor = .black
+    return view
+  }
+
+  func updateUIView(_ uiView: PlayerLayerView, context: Context) {}
+}
+
+private final class PlayerLayerView: UIView {
+  override class var layerClass: AnyClass { AVPlayerLayer.self }
+  var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
+
+  override func layoutSubviews() {
+    super.layoutSubviews()
+    playerLayer.frame = bounds
   }
 }
 
