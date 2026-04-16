@@ -27,15 +27,24 @@ struct AdContainerView: UIViewRepresentable {
   }
 
   func updateUIView(_ uiView: UIView, context: Context) {
-    guard uiView.window != nil else { return }
-    // Walk up the responder chain to find the nearest UIViewController.
-    var responder: UIResponder? = uiView
-    while let next = responder?.next {
-      if let viewController = next as? UIViewController {
-        viewModel.configure(adContainer: uiView, presentingViewController: viewController)
+    // Defer one run-loop tick so the UIView is guaranteed to be embedded
+    // in a window before we walk the responder chain.
+    DispatchQueue.main.async {
+      NSLog("[IMA] AdContainerView updateUIView — window: \(String(describing: uiView.window)), frame: \(uiView.frame)")
+      guard uiView.window != nil else {
+        NSLog("[IMA] AdContainerView — view not yet in window, skipping configure")
         return
       }
-      responder = next
+      var responder: UIResponder? = uiView
+      while let next = responder?.next {
+        if let viewController = next as? UIViewController {
+          NSLog("[IMA] AdContainerView — found vc: \(viewController), calling configure")
+          viewModel.configure(adContainer: uiView, presentingViewController: viewController)
+          return
+        }
+        responder = next
+      }
+      NSLog("[IMA] AdContainerView — no UIViewController found in responder chain")
     }
   }
 }
